@@ -59,3 +59,13 @@ legend{font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:v
 .tag.ok{background:#dff3e4;color:#1b7f3b}.tag.no{background:#fde3e1;color:#b3261e}
 .ham{display:none;background:none;border:0;color:#fff;font-size:1.5rem;cursor:pointer}
 @media(max-width:700px){.two{grid-template-columns:1fr}.ham{display:block}nav a:not(.logo),nav span{display:none}nav.open a,nav.open span{display:block;width:100%}.hs{flex-direction:column}}
+
+/* ===== Simulasi pembayaran ===== */
+.sim{background:#fff3cd;color:#7a5b00;border:2px dashed var(--gold);border-radius:12px;padding:8px 14px;font-weight:800;text-align:center;margin-bottom:14px}
+.big{font-size:1.9rem;font-weight:800;color:var(--navy)}.pmb{text-align:center;transition:.2s}.pmb:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(15,36,71,.18)}.pmb .ic{display:block;font-size:2rem}
+.bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.s-menunggu{background:#fff3cd;color:#7a5b00}.s-proses{background:#dbeafe;color:#1d4ed8}.s-berhasil{background:#dff3e4;color:#1b7f3b}.s-gagal{background:#fde3e1;color:#b3261e}.s-exp{background:#e5e7eb;color:#4b5563}
+.qr{width:200px;height:200px;border:6px solid #fff;border-radius:10px;box-shadow:0 4px 14px rgba(15,36,71,.25)}
+.rh{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--gold);padding-bottom:8px}.logo2{font-weight:800;letter-spacing:2px;color:var(--navy);font-size:1.3rem}
+th{white-space:nowrap}
+@media print{nav,.btn,.sim,#lb{display:none!important}body{background:#fff!important}.wrap{box-shadow:none;background:#fff;backdrop-filter:none}.sec,.sec:hover{box-shadow:none;transform:none}}

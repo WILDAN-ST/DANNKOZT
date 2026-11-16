@@ -14,8 +14,8 @@ if(!L('kosts'))S('kosts',SEED);
 if(!L('users'))S('users',[{email:'penyewa@dannkozt.id',pass:'123456',role:'penyewa',nama:'Budi Penyewa',hp:'0812000111'},{email:'pemilik@dannkozt.id',pass:'123456',role:'pemilik',nama:'Siti Pemilik',hp:'0812000222',status:'Disetujui'},{email:'admin@dannkozt.id',pass:'admin123',role:'admin',nama:'Admin'}]);
 const me=()=>L('session',null);
 // ---- Navigasi & akses role ----
-const MENU={guest:[['beranda','Beranda'],['kamar','Cari Kost'],['login','Login'],['register','Daftar']],penyewa:[['beranda','Beranda'],['kamar','Cari Kost'],['riwayat','Riwayat Booking'],['profil','Profil']],pemilik:[['dashboard','Dashboard'],['tambah','Tambah Kost'],['kelola','Kelola Kost'],['pesanan','Pesanan Masuk'],['profil','Profil']],admin:[['dashboard','Dashboard'],['verif','Verifikasi'],['pengguna','Pengguna'],['transaksi','Transaksi']]};
-const ROLE={riwayat:'penyewa',profil:'*',dashboard:'pemilik,admin',tambah:'pemilik',kelola:'pemilik',pesanan:'pemilik',verif:'admin',pengguna:'admin',transaksi:'admin'};
+const MENU={guest:[['beranda','Beranda'],['kamar','Cari Kost'],['login','Login'],['register','Daftar']],penyewa:[['beranda','Beranda'],['kamar','Cari Kost'],['riwayat','Riwayat Booking'],['riwayatbayar','Pembayaran'],['profil','Profil']],pemilik:[['dashboard','Dashboard'],['tambah','Tambah Kost'],['kelola','Kelola Kost'],['pesanan','Pesanan Masuk'],['trxpemilik','Transaksi'],['profil','Profil']],admin:[['dashboard','Dashboard'],['verif','Verifikasi'],['pengguna','Pengguna'],['transaksi','Transaksi']]};
+const ROLE={riwayat:'penyewa',profil:'*',checkout:'penyewa',instruksi:'penyewa',riwayatbayar:'penyewa',trxpemilik:'pemilik',detailtrx:'*',dashboard:'pemilik,admin',tambah:'pemilik',kelola:'pemilik',pesanan:'pemilik',verif:'admin',pengguna:'admin',transaksi:'admin'};
 let cur='beranda';
 function go(v,p){const u=me(),r=ROLE[v];
  if(r&&(!u||(r!=='*'&&!r.split(',').includes(u.role)))){toast('Login dengan akun yang sesuai dulu');v='login'}
@@ -51,11 +51,11 @@ const R={
   <label>Durasi (<span id="du">-</span>) <input id="dn" type="number" min="1" value="1" oninput="hit()"></label> <label>Mulai <input id="ds2" type="date" oninput="hit()"></label><div class="sum" id="sum">Pilih tipe sewa untuk melihat ringkasan.</div><button class="btn" onclick="book()" ${K.tersedia<1?'disabled':''}>Booking Sekarang</button>`;
   $('ds2').value=$('ds2').min=new Date().toISOString().slice(0,10);if(K.media)loadGal(K.id)},
  riwayat(){const u=me(),b=L('bookings',[]).filter(x=>x.email===u.email).reverse();
-  $('rw').innerHTML=b.map(x=>`<div class="card"><div class="img">${x.ikon}</div><div class="body"><h3>${esc(x.kost)}</h3><p>${SEWA[x.tipe].n}: ${x.dur} ${SEWA[x.tipe].u}<br>${tgl(x.mulai)} - ${tgl(x.akhir)}<br>Harga ${rp(x.harga)} · Total <b>${rp(x.total)}</b></p><span class="tag">${x.status}</span><span class="tag">${x.bayar}</span><br>${x.bayar==='Belum Dibayar'&&x.status!=='Ditolak'?`<button class="btn" onclick="bayar(${x.id})">Bayar (simulasi)</button>`:''}</div></div>`).join('')||'<p>Belum ada booking. Mulai dari menu Cari Kost.</p>'},
+  $('rw').innerHTML=b.map(x=>`<div class="card"><div class="img">${x.ikon}</div><div class="body"><h3>${esc(x.kost)}</h3><p>${SEWA[x.tipe].n}: ${x.dur} ${SEWA[x.tipe].u}<br>${tgl(x.mulai)} - ${tgl(x.akhir)}<br>Harga ${rp(x.harga)} · Total <b>${rp(x.total)}</b></p><span class="tag">${x.status}</span><span class="tag">${x.bayar}</span><br>${x.bayar==='Belum Dibayar'&&x.status!=='Ditolak'?`<button class="btn" onclick="go('checkout',${x.id})">Bayar Sekarang</button>`:''}</div></div>`).join('')||'<p>Belum ada booking. Mulai dari menu Cari Kost.</p>'},
  profil(){const u=me();$('pf').innerHTML=`<h2>Profil</h2><div class="sum">Nama: ${esc(u.nama)}<br>Email: ${esc(u.email)}<br>HP: ${esc(u.hp||'-')}<br>Peran: ${u.role}${u.status?'<br>Status verifikasi: <b>'+u.status+'</b>':''}${u.ktp?'<br>KTP: '+u.ktp+' (tidak ditampilkan ke publik)':''}</div>`},
  dashboard(){const u=me(),ks=L('kosts',[]),bs=L('bookings',[]),us=L('users',[]);let s;
   if(u.role==='pemilik'){const mk=ks.filter(k=>k.owner===u.email),mb=bs.filter(b=>mk.some(k=>k.id===b.kostId)),c=x=>mb.filter(b=>b.status===x).length;
-   s=[['Total kost',mk.length],['Total kamar',mk.reduce((a,k)=>a+k.kamar,0)],['Kamar tersedia',mk.reduce((a,k)=>a+k.tersedia,0)],['Booking masuk',mb.length],['Menunggu',c('Menunggu Konfirmasi')],['Diterima',c('Diterima')],['Ditolak',c('Ditolak')]];
+   s=[['Total kost',mk.length],['Total kamar',mk.reduce((a,k)=>a+k.kamar,0)],['Kamar tersedia',mk.reduce((a,k)=>a+k.tersedia,0)],['Booking masuk',mb.length],['Menunggu',c('Menunggu Konfirmasi')],['Diterima',c('Diterima')+c('Dikonfirmasi')],['Ditolak',c('Ditolak')]];
    const x=us.find(z=>z.email===u.email);if(x&&x.status!=='Disetujui')toast('Akun pemilik: '+x.status+'. Kost belum bisa dipublikasikan.')}
   else s=[['Penyewa',us.filter(x=>x.role==='penyewa').length],['Pemilik',us.filter(x=>x.role==='pemilik').length],['Kost',ks.length],['Kamar',ks.reduce((a,k)=>a+k.kamar,0)],['Transaksi',bs.length],['Pemilik menunggu',us.filter(x=>x.status==='Menunggu Verifikasi').length],['Kost menunggu',ks.filter(k=>k.status==='Menunggu').length]];
   $('ds').innerHTML=s.map(x=>`<div class="stat"><b>${x[1]}</b>${x[0]}</div>`).join('')},
@@ -67,7 +67,9 @@ const R={
   $('vo').innerHTML='<table><tr><th>Nama</th><th>Email</th><th>KTP (akses admin)</th><th>Status</th><th></th></tr>'+us.map(x=>`<tr><td>${esc(x.nama)}</td><td>${esc(x.email)}</td><td>${x.ktp||'Data dummy'}</td><td>${x.status}</td><td><button class="btn" onclick="setU('${x.email}','Disetujui')">Setujui</button> <button class="btn red" onclick="setU('${x.email}','Ditolak')">Tolak</button></td></tr>`).join('')+'</table>';
   $('vk').innerHTML='<table><tr><th>Kost</th><th>Kota</th><th>Pemilik</th><th>Status</th><th></th></tr>'+ks.map(k=>`<tr><td>${esc(k.nama)}</td><td>${esc(k.kota)}</td><td>${esc(k.owner)}</td><td>${k.status}</td><td><button class="btn" onclick="setK(${k.id},'Disetujui')">Setujui</button> <button class="btn red" onclick="setK(${k.id},'Ditolak')">Tolak</button></td></tr>`).join('')+'</table>'},
  pengguna(){$('pg').innerHTML='<table><tr><th>Nama</th><th>Email</th><th>Peran</th><th></th></tr>'+L('users',[]).map(x=>`<tr><td>${esc(x.nama)}</td><td>${esc(x.email)}</td><td>${x.role}</td><td>${x.role==='admin'?'':`<button class="btn red" onclick="delU('${x.email}')">Hapus</button>`}</td></tr>`).join('')+'</table>'},
- transaksi(){$('tr').innerHTML='<table><tr><th>Penyewa</th><th>Kost</th><th>Sewa</th><th>Total</th><th>Pembayaran</th><th>Status</th></tr>'+L('bookings',[]).map(x=>`<tr><td>${esc(x.nama)}</td><td>${esc(x.kost)}</td><td>${SEWA[x.tipe].n} x${x.dur}</td><td>${rp(x.total)}</td><td>${x.bayar}</td><td>${x.status}</td></tr>`).join('')+'</table>'}
+ transaksi(){const f=$('trf').value,all=TX(),ok=all.filter(x=>x.status==='Berhasil'),t=all.filter(x=>!f||x.status===f).reverse();
+  $('trs').innerHTML=`<div class="stat"><b>${all.length}</b>Total transaksi</div><div class="stat"><b>${ok.length}</b>Berhasil (${rp(ok.reduce((a,x)=>a+x.total,0))})</div><div class="stat"><b>${all.filter(x=>x.status==='Menunggu Pembayaran').length}</b>Menunggu pembayaran</div>`;
+  $('tr').innerHTML='<table><tr><th>No.</th><th>Penyewa</th><th>Kost</th><th>Metode</th><th>Total</th><th>Status</th><th></th></tr>'+t.map(x=>`<tr><td>${x.id}</td><td>${esc(x.nama)}</td><td>${esc(x.kost)}</td><td>${x.metode}</td><td>${rp(x.total)}</td><td>${bd(x.status)}</td><td><button class="btn alt" onclick="go('detailtrx','${x.id}')">Lihat Detail</button></td></tr>`).join('')+'</table>'+(t.length?'':'<p>Belum ada transaksi.</p>')}
 };
 // ---- Tipe sewa, perhitungan harga & tanggal ----
 function pick(t){T=t;document.querySelectorAll('.opt').forEach(o=>o.classList.toggle('sel',o.id==='o-'+t));hit()}
@@ -76,7 +78,7 @@ function hit(){if(!T)return null;const dur=Math.max(1,parseInt($('dn').value)||1
  return{tipe:T,dur,mulai:$('ds2').value,akhir:akhir.toISOString().slice(0,10),harga:K.harga[T],total}}
 function book(){const u=me();if(!u||u.role!=='penyewa'){toast('Login sebagai penyewa dulu');return go('login')}
  const h=hit();if(!h)return toast('Pilih tipe sewa dulu');const ks=L('kosts',[]),kk=ks.find(x=>x.id===K.id);if(kk.tersedia<1)return toast('Kamar penuh');
- kk.tersedia--;S('kosts',ks);const b=L('bookings',[]);b.push({id:Date.now(),email:u.email,nama:u.nama,hp:u.hp,kostId:K.id,kost:K.nama,ikon:K.ikon,status:'Menunggu Konfirmasi',bayar:'Belum Dibayar',...h});S('bookings',b);toast('Booking berhasil');go('riwayat')}
+ kk.tersedia--;S('kosts',ks);const b=L('bookings',[]);b.push({id:Date.now(),email:u.email,nama:u.nama,hp:u.hp,kostId:K.id,kost:K.nama,ikon:K.ikon,status:'Menunggu Konfirmasi',bayar:'Belum Dibayar',...h});S('bookings',b);toast('Booking berhasil, lanjut ke pembayaran');go('checkout',b[b.length-1].id)}
 function bayar(id){const b=L('bookings',[]);b.find(x=>x.id===id).bayar='Berhasil';S('bookings',b);toast('Pembayaran berhasil (simulasi)');R.riwayat()}
 // ---- Pemilik ----
 // ---- Media (IndexedDB), fasilitas, iuran ----
@@ -124,7 +126,7 @@ function editHarga(id){const ks=L('kosts',[]),k=ks.find(x=>x.id===id);const p=t=
  const h={bulan:p('bulan'),semester:p('semester'),tahun:p('tahun')};if(!Object.values(h).some(Boolean))return toast('Minimal satu tipe sewa aktif');
  k.harga=h;const t=prompt('Kamar tersedia (maks '+k.kamar+')',k.tersedia);if(t!==null&&+t>=0&&+t<=k.kamar)k.tersedia=+t;S('kosts',ks);toast('Kost diperbarui');R.kelola()}
 function delKost(id){if(confirm('Hapus kost ini?')){S('kosts',L('kosts',[]).filter(k=>k.id!==id));R.kelola()}}
-function setB(id,s){const b=L('bookings',[]),x=b.find(z=>z.id===id);x.status=s;S('bookings',b);
+function setB(id,s){const b=L('bookings',[]),x=b.find(z=>z.id===id);x.status=s;if(s==='Diterima'&&x.bayar==='Berhasil')x.status='Dikonfirmasi';S('bookings',b);
  if(s==='Ditolak'){const ks=L('kosts',[]),k=ks.find(z=>z.id===x.kostId);if(k){k.tersedia++;S('kosts',ks)}}toast('Booking '+s.toLowerCase());R.pesanan()}
 // ---- Admin ----
 function setU(em,s){const us=L('users',[]);us.find(x=>x.email===em).status=s;S('users',us);toast('Pemilik '+s.toLowerCase());R.verif()}
@@ -141,5 +143,43 @@ const nm=id=>$(id).selectedOptions[0].text;
 function onPv(){fill('kb',[],'Pilih Kabupaten/Kota');fill('kk',[],'Pilih Kecamatan');$('fs2').value=$('fs3').value='';delete OPT.kb_all;delete OPT.kk_all;if($('pv').value)load('kb','regencies/'+$('pv').value,'Pilih Kabupaten/Kota')}
 function onKb(){fill('kk',[],'Pilih Kecamatan');$('fs3').value='';delete OPT.kk_all;if($('kb').value)load('kk','districts/'+$('kb').value,'Pilih Kecamatan')}
 R.tambah=()=>{if(!OPT.pv_all)load('pv','provinces','Pilih Provinsi')};
+// ---- Simulasi pembayaran (localStorage, TANPA payment gateway) ----
+const SK={'Menunggu Pembayaran':'menunggu','Sedang Diproses':'proses','Berhasil':'berhasil','Gagal':'gagal','Kedaluwarsa':'exp'};
+const bd=s=>`<span class="bdg s-${SK[s]}">${s}</span>`;
+const SIM='<div class="sim">SIMULASI PEMBAYARAN — bukan transaksi uang sungguhan</div>';
+const hs=s=>[...String(s)].reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,7);
+const TX=()=>{const t=L('trx',[]);let c=0;t.forEach(x=>{if(x.status==='Menunggu Pembayaran'&&x.exp<Date.now()){x.status='Kedaluwarsa';c=1}});if(c)S('trx',t);return t};
+const CH={'Transfer Bank':['BCA','BRI','BNI','Mandiri'],'E-Wallet':['GoPay','DANA','OVO','ShopeePay']},IC={QRIS:'📱','Transfer Bank':'🏦','E-Wallet':'👛'};
+let CO=null;
+function payNo(x){const n=String(hs(x.id)).padStart(10,'0').slice(-10);return x.metode==='Transfer Bank'?({BCA:'39001',BRI:'88810',BNI:'8808',Mandiri:'88908'}[x.channel]+n):x.metode==='E-Wallet'?'0812'+n.slice(0,8):'-'}
+function qr(s){let h=hs(s),c='';const N=21,z=8;for(let y=0;y<N;y++)for(let x=0;x<N;x++){if((x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13))continue;h=(Math.imul(h,1664525)+1013904223)>>>0;if((h>>>16)&1)c+=`<rect x="${x*z}" y="${y*z}" width="${z}" height="${z}"/>`}
+ const f=(x,y)=>`<rect x="${x*z}" y="${y*z}" width="${7*z}" height="${7*z}"/><rect x="${(x+1)*z}" y="${(y+1)*z}" width="${5*z}" height="${5*z}" fill="#fff"/><rect x="${(x+2)*z}" y="${(y+2)*z}" width="${3*z}" height="${3*z}"/>`;
+ return `<svg class="qr" viewBox="0 0 168 168"><rect width="168" height="168" fill="#fff"/><g fill="#0f2447">${c}${f(0,0)}${f(14,0)}${f(0,14)}</g></svg>`}
+function setM(m){CO.m=m;CO.ch=(CH[m]||[''])[0];pm()}
+function pm(){$('pms').innerHTML=['QRIS','Transfer Bank','E-Wallet'].map(m=>`<div class="opt pmb ${CO.m===m?'sel':''}" onclick="setM('${m}')"><span class="ic">${IC[m]}</span><b>${m}</b></div>`).join('');
+ $('chs').innerHTML=CH[CO.m]?`<label>Pilih ${CO.m==='E-Wallet'?'e-wallet':'bank'}: <select onchange="CO.ch=this.value">${CH[CO.m].map(c=>`<option ${c===CO.ch?'selected':''}>${c}</option>`).join('')}</select></label>`:''}
+R.checkout=id=>{const u=me(),b=L('bookings',[]).find(x=>x.id==id&&x.email===u.email);if(!b){toast('Booking tidak ditemukan');return go('riwayat')}
+ CO={b,m:'QRIS',ch:''};$('co').innerHTML=`${SIM}<h2>Checkout</h2><div class="sec"><b>${esc(b.kost)}</b><div>${SEWA[b.tipe].n} · ${b.dur} ${SEWA[b.tipe].u}</div><div>${tgl(b.mulai)} - ${tgl(b.akhir)}</div><div>Harga ${rp(b.harga)}</div><div class="big">Total: ${rp(b.total)}</div></div><h3>Metode pembayaran</h3><div class="opts" id="pms"></div><div id="chs"></div><br><button class="btn" onclick="payNow(this)">Bayar Sekarang</button>`;pm()};
+function payNow(btn){btn.disabled=true;const b=CO.b,t=TX();
+ if(t.some(x=>x.bookingId===b.id&&x.status==='Berhasil')){toast('Booking ini sudah dibayar');return go('riwayatbayar')}
+ let x=t.find(z=>z.bookingId===b.id&&['Menunggu Pembayaran','Sedang Diproses'].includes(z.status));
+ if(!x){const k=L('kosts',[]).find(z=>z.id===b.kostId),o=k&&L('users',[]).find(z=>z.email===k.owner);
+  x={id:'TRX-'+Date.now().toString(36).toUpperCase(),bookingId:b.id,email:b.email,nama:b.nama,ownerEmail:k?k.owner:'',ownerNama:o?o.nama:'-',kost:b.kost,tipe:b.tipe,dur:b.dur,total:b.total,tgl:new Date().toISOString(),status:'Menunggu Pembayaran',exp:Date.now()+864e5};t.push(x)}
+ x.metode=CO.m;x.channel=CO.ch;x.no=payNo(x);S('trx',t);toast('Transaksi dibuat');go('instruksi',x.id)}
+function copyNo(){const n=$('nomor').textContent;(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(()=>toast('Nomor disalin'),()=>toast('Salin manual: '+n))}
+R.instruksi=id=>{const t=TX().find(x=>x.id===id&&x.email===me().email);if(!t){toast('Transaksi tidak ditemukan');return go('riwayatbayar')}
+ const cp=`<b id="nomor">${t.no}</b> <button class="btn alt" onclick="copyNo()">Salin</button>`;
+ $('ins').innerHTML=`${SIM}<h2>Instruksi Pembayaran</h2><p>${t.id} ${bd(t.status)}</p><div class="sec"><h3>${t.metode}${t.channel?' · '+t.channel:''}</h3><div class="big">${rp(t.total)}</div>`+(t.metode==='QRIS'?`${qr(t.id)}<p class="d">QR ini hanya ilustrasi simulasi dan tidak dapat digunakan untuk transaksi sungguhan.</p>`:t.metode==='Transfer Bank'?`<div>Nomor virtual account (simulasi): ${cp}</div><div>Bank: ${t.channel} · Penerima: DANNKOZT (SIMULASI)</div>`:`<div>Nomor ${t.channel} (simulasi): ${cp}</div><p class="d">Instruksi simulasi: buka aplikasi ${t.channel}, pilih bayar, lalu masukkan nominal di atas. Tidak ada transaksi nyata.</p>`)+`</div><br>`+(t.status==='Menunggu Pembayaran'?`<button class="btn" onclick="simPay('${t.id}',1)">Simulasikan Pembayaran Berhasil</button> <button class="btn red" onclick="simPay('${t.id}',0)">Simulasikan Gagal</button>`:`<button class="btn" onclick="go('detailtrx','${t.id}')">Lihat Detail</button>`)};
+function syncB(x){const b=L('bookings',[]),y=b.find(z=>z.id===x.bookingId);if(!y)return;y.bayar=x.status==='Berhasil'?'Berhasil':'Belum Dibayar';if(x.status==='Berhasil'&&y.status==='Diterima')y.status='Dikonfirmasi';S('bookings',b)}
+function simPay(id,ok){let t=TX();const x=t.find(z=>z.id===id);if(!x||x.status!=='Menunggu Pembayaran')return;
+ x.status=ok?'Sedang Diproses':'Gagal';S('trx',t);R.instruksi(id);if(!ok){syncB(x);return toast('Pembayaran gagal (simulasi)')}
+ setTimeout(()=>{t=TX();const y=t.find(z=>z.id===id);if(!y||y.status!=='Sedang Diproses')return;y.status='Berhasil';y.bayarTgl=new Date().toISOString();S('trx',t);syncB(y);toast('Pembayaran berhasil');if(cur==='instruksi')go('detailtrx',id)},1200)}
+const tblT=(t,cols)=>'<table><tr>'+cols.map(c=>`<th>${c[0]}</th>`).join('')+'<th></th></tr>'+t.map(x=>'<tr>'+cols.map(c=>`<td>${c[1](x)}</td>`).join('')+`<td><button class="btn alt" onclick="go('detailtrx','${x.id}')">Lihat Detail</button></td></tr>`).join('')+'</table>'+(t.length?'':'<p>Belum ada transaksi.</p>');
+const MT=x=>x.metode+(x.channel?' ('+x.channel+')':'');
+R.riwayatbayar=()=>{$('rb').innerHTML=tblT(TX().filter(x=>x.email===me().email).reverse(),[['No.',x=>x.id],['Kost',x=>esc(x.kost)],['Pemilik',x=>esc(x.ownerNama)],['Tanggal',x=>tgl(x.tgl)],['Tipe sewa',x=>SEWA[x.tipe].n],['Durasi',x=>x.dur+' '+SEWA[x.tipe].u],['Metode',MT],['Total',x=>rp(x.total)],['Status',x=>bd(x.status)]])};
+R.trxpemilik=()=>{$('tp2').innerHTML=tblT(TX().filter(x=>x.ownerEmail===me().email).reverse(),[['Penyewa',x=>esc(x.nama)],['Kost',x=>esc(x.kost)],['Tanggal pembayaran',x=>tgl(x.bayarTgl||x.tgl)],['Metode',MT],['Total',x=>rp(x.total)],['Status',x=>bd(x.status)]])};
+R.detailtrx=id=>{const u=me(),t=TX().find(x=>x.id===id);if(!t||!(u.role==='admin'||t.email===u.email||t.ownerEmail===u.email)){toast('Transaksi tidak ditemukan');return go(u.role==='penyewa'?'riwayatbayar':'dashboard')}
+ const ok=t.status==='Berhasil',r=(a,b)=>`<tr><th>${a}</th><td>${b}</td></tr>`,back=u.role==='penyewa'?'riwayatbayar':u.role==='pemilik'?'trxpemilik':'transaksi';
+ $('dt').innerHTML=`${SIM}<div class="sec" id="rc"><div class="rh"><span class="logo2">DANNKOZT</span><b>${ok?'BUKTI PEMBAYARAN':'DETAIL TRANSAKSI'}</b></div><table>${r('No. Transaksi',t.id)}${r('Penyewa',esc(t.nama))}${r('Kost',esc(t.kost))}${r('Pemilik',esc(t.ownerNama))}${r('Tanggal transaksi',tgl(t.tgl))}${r('Metode',MT(t))}${r('Tipe &amp; durasi sewa',SEWA[t.tipe].n+' · '+t.dur+' '+SEWA[t.tipe].u)}${r('Total pembayaran',`<b>${rp(t.total)}</b>`)}${r('Status',ok?'<b>BERHASIL</b>':bd(t.status))}${ok?r('Tanggal dibayar',tgl(t.bayarTgl)):''}</table><p class="d">Dokumen simulasi, bukan bukti transaksi uang sungguhan.</p></div><br>`+(ok?`<button class="btn" onclick="window.print()">Cetak Bukti Pembayaran</button> `:'')+(t.status==='Menunggu Pembayaran'&&t.email===u.email?`<button class="btn" onclick="go('instruksi','${t.id}')">Lanjutkan Pembayaran</button> `:'')+(['Gagal','Kedaluwarsa'].includes(t.status)&&t.email===u.email?`<button class="btn" onclick="go('checkout',${t.bookingId})">Bayar Ulang</button> `:'')+`<button class="btn alt" onclick="go('${back}')">Kembali</button>`};
 $('fu').innerHTML=rows('u_',UMUM);$('fp').innerHTML=rows('p_',PRIB);
 go('beranda');
